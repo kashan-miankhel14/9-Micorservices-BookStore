@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-catalog-service
+  namespace: bookstore
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: book-catalog-service
+  template:
+    metadata:
+      labels:
+        app: book-catalog-service
+    spec:
+      containers:
+      - name: book-catalog-service
+        image: bookstore-book-catalog:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 4002
+        env:
+        - name: PORT
+          value: "4002"
+        envFrom:
+        - configMapRef:
+            name: bookstore-config
+        - secretRef:
+            name: bookstore-secret
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4002
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 4002
+          initialDelaySeconds: 15
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-catalog-service
+  namespace: bookstore
+spec:
+  type: ClusterIP
+  selector:
+    app: book-catalog-service
+  ports:
+  - port: 4002
+    targetPort: 4002
+    protocol: TCP

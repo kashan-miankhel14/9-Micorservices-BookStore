@@ -1,0 +1,14 @@
+{
+  "name": "recommendation-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "prom-client": "^15.1.0"
+  }
+}

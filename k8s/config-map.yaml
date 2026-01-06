@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookstore-config
+  namespace: bookstore
+data:
+  MONGO_HOST: mongodb
+  MONGO_PORT: "27017"
+  MONGO_DB: bookstore
+  MONGO_URL: "mongodb://bookstore_user:bookstore_password_change_me@mongodb:27017/bookstore?authSource=admin"
+  USERS_URL: "http://user-service:4001"
+  BOOKS_URL: "http://book-catalog-service:4002"
+  ORDERS_URL: "http://order-service:4003"
+  PAYMENTS_URL: "http://payment-service:4004"
+  REVIEWS_URL: "http://review-service:4005"
+  CART_URL: "http://cart-service:4006"
+  RECS_URL: "http://recommendation-service:4007"
+  NOTIFY_URL: "http://notification-service:4008"
+  API_GATEWAY_PORT: "3000"
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  NEXT_PUBLIC_API_URL: "http://api-gateway:3000"

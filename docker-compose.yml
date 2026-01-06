@@ -1,0 +1,225 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      book-catalog-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      recommendation-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    environment:
+      PORT: 3000
+      JWT_SECRET: supersecretjwt
+      # Routing targets (service discovery via Docker DNS)
+      USERS_URL: http://user-service:3001
+      BOOKS_URL: http://book-catalog-service:3002
+      ORDERS_URL: http://order-service:3003
+      PAYMENTS_URL: http://payment-service:3004
+      REVIEWS_URL: http://review-service:3005
+      CART_URL: http://cart-service:3006
+      RECS_URL: http://recommendation-service:3007
+      NOTIFY_URL: http://notification-service:3008
+    ports:
+      - "8090:3000"
+
+  user-service:
+    build:
+      context: ./services/user-service
+    container_name: user-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+      JWT_SECRET: supersecretjwt
+    ports:
+      - "3001:3001"
+
+  book-catalog-service:
+    build:
+      context: ./services/book-catalog-service
+    container_name: book-catalog-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: 3002
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+    ports:
+      - "3002:3002"
+
+  order-service:
+    build:
+      context: ./services/order-service
+    container_name: order-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+    environment:
+      PORT: 3003
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+      PAYMENT_URL: http://payment-service:3004
+      NOTIFY_URL: http://notification-service:3008
+      CART_URL: http://cart-service:3006
+      JWT_SECRET: supersecretjwt
+    ports:
+      - "3003:3003"
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+    container_name: payment-service
+    restart: unless-stopped
+    environment:
+      PORT: 3004
+    ports:
+      - "3004:3004"
+
+  review-service:
+    build:
+      context: ./services/review-service
+    container_name: review-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: 3005
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+      JWT_SECRET: supersecretjwt
+    ports:
+      - "3005:3005"
+
+  cart-service:
+    build:
+      context: ./services/cart-service
+    container_name: cart-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: 3006
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+      JWT_SECRET: supersecretjwt
+    ports:
+      - "3006:3006"
+
+  recommendation-service:
+    build:
+      context: ./services/recommendation-service
+    container_name: recommendation-service
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      book-catalog-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+    environment:
+      PORT: 3007
+      MONGO_URL: mongodb://root:example@mongo:27017/bookstore?authSource=admin
+      BOOKS_URL: http://book-catalog-service:3002
+      REVIEWS_URL: http://review-service:3005
+    ports:
+      - "3007:3007"
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: notification-service
+    restart: unless-stopped
+    environment:
+      PORT: 3008
+    ports:
+      - "3008:3008"
+
+  frontend:
+    build: .
+    container_name: bookstore-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://api-gateway:3000"
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - mongo
+      - api-gateway
+      - user-service
+      - book-catalog-service
+      - order-service
+      - payment-service
+      - review-service
+      - cart-service
+      - recommendation-service
+      - notification-service
+      - frontend
+
+volumes:
+  mongo-data:
