@@ -15,18 +15,18 @@ spec:
     spec:
       containers:
       - name: book-catalog-service
-        image: bookstore-book-catalog:latest
+        image: bookstore-book-catalog-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4002
+        - containerPort: 3002
         env:
         - name: PORT
-          value: "4002"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3002"
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: bookstore-config
+              key: MONGO_URL
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +37,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4002
+            port: 3002
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4002
+            port: 3002
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +57,5 @@ spec:
   selector:
     app: book-catalog-service
   ports:
-  - port: 4002
-    targetPort: 4002
-    protocol: TCP
+  - port: 3002
+    targetPort: 3002

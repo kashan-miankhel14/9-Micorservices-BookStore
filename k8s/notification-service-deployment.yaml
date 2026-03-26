@@ -18,15 +18,10 @@ spec:
         image: bookstore-notification-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4008
+        - containerPort: 3008
         env:
         - name: PORT
-          value: "4008"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3008"
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +32,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4008
+            port: 3008
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4008
+            port: 3008
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +52,5 @@ spec:
   selector:
     app: notification-service
   ports:
-  - port: 4008
-    targetPort: 4008
-    protocol: TCP
+  - port: 3008
+    targetPort: 3008

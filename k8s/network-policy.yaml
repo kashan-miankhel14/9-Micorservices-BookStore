@@ -1,0 +1,131 @@
+# Default deny all ingress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: bookstore
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Allow frontend to receive traffic from ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
+  namespace: bookstore
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - {}
+---
+# Allow api-gateway to receive from frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-gateway
+  namespace: bookstore
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+---
+# Allow all microservices to receive from api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-from-gateway
+  namespace: bookstore
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - user-service
+          - book-catalog-service
+          - order-service
+          - payment-service
+          - review-service
+          - cart-service
+          - recommendation-service
+          - notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - order-service
+                  - recommendation-service
+---
+# Allow mongodb to receive only from services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mongodb
+  namespace: bookstore
+spec:
+  podSelector:
+    matchLabels:
+      app: mongodb
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - user-service
+                  - book-catalog-service
+                  - order-service
+                  - review-service
+                  - cart-service
+                  - recommendation-service
+---
+# Allow prometheus to scrape all services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: bookstore
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - port: 3000
+        - port: 3001
+        - port: 3002
+        - port: 3003
+        - port: 3004
+        - port: 3005
+        - port: 3006
+        - port: 3007
+        - port: 3008

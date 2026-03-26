@@ -1,40 +1,28 @@
 #!/bin/bash
-
-# Kubernetes Deployment Script for Online Bookstore Microservices
-# Supports: Minikube, Kind, or cloud providers (GKE, EKS, AKS)
-
 set -e
 
 echo "==================================="
 echo "Online Bookstore - K8s Deployment"
 echo "==================================="
 
-# Step 1: Create namespace
-echo "[1/7] Creating namespace..."
+echo "[1/9] Creating namespace..."
 kubectl apply -f k8s/namespace.yaml
 
-# Step 2: Create ConfigMap
-echo "[2/7] Creating ConfigMap..."
+echo "[2/9] Creating ConfigMap and Secret..."
 kubectl apply -f k8s/config-map.yaml
-
-# Step 3: Create Secret
-echo "[3/7] Creating Secret..."
 kubectl apply -f k8s/secret.yaml
 
-# Step 4: Create MongoDB PVC and StatefulSet
-echo "[4/7] Deploying MongoDB..."
+echo "[3/9] Deploying MongoDB..."
+kubectl apply -f k8s/mongodb-pv.yaml
 kubectl apply -f k8s/mongodb-pvc.yaml
 kubectl apply -f k8s/mongodb-statefulset.yaml
-
-# Wait for MongoDB to be ready
-echo "Waiting for MongoDB to be ready..."
+echo "Waiting for MongoDB..."
 kubectl wait --for=condition=ready pod -l app=mongodb -n bookstore --timeout=300s
 
-# Step 5: Deploy all microservices
-echo "[5/7] Deploying API Gateway..."
+echo "[4/9] Deploying API Gateway..."
 kubectl apply -f k8s/api-gateway-deployment.yaml
 
-echo "[6/7] Deploying microservices..."
+echo "[5/9] Deploying microservices..."
 kubectl apply -f k8s/user-service-deployment.yaml
 kubectl apply -f k8s/book-catalog-deployment.yaml
 kubectl apply -f k8s/order-service-deployment.yaml
@@ -43,37 +31,35 @@ kubectl apply -f k8s/review-service-deployment.yaml
 kubectl apply -f k8s/cart-service-deployment.yaml
 kubectl apply -f k8s/recommendation-service-deployment.yaml
 kubectl apply -f k8s/notification-service-deployment.yaml
+kubectl apply -f k8s/frontend-deployment.yaml
 
-# Step 6: Deploy Ingress
-echo "[7/7] Deploying Ingress..."
+echo "[6/9] Deploying Ingress..."
 kubectl apply -f k8s/ingress.yaml
+
+echo "[7/9] Applying HPA and NetworkPolicy..."
+kubectl apply -f k8s/hpa.yaml
+kubectl apply -f k8s/network-policy.yaml
+
+echo "[8/9] Deploying monitoring stack..."
+kubectl apply -f k8s/prometheus-deployment.yaml
+kubectl apply -f k8s/grafana-deployment.yaml
+
+echo "[9/9] Waiting for deployments to be ready..."
+DEPLOYMENTS=(api-gateway user-service book-catalog-service order-service payment-service review-service cart-service recommendation-service notification-service prometheus grafana)
+for d in "${DEPLOYMENTS[@]}"; do
+  kubectl wait --for=condition=available --timeout=300s deployment/$d -n bookstore
+done
 
 echo ""
 echo "==================================="
 echo "Deployment Complete!"
 echo "==================================="
-echo ""
-echo "Waiting for all deployments to be ready..."
-kubectl wait --for=condition=available --timeout=300s deployment/api-gateway -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/user-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/book-catalog-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/order-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/payment-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/review-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/cart-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/recommendation-service -n bookstore
-kubectl wait --for=condition=available --timeout=300s deployment/notification-service -n bookstore
-
-echo ""
-echo "Services deployed:"
-kubectl get services -n bookstore
-echo ""
-echo "Deployments:"
 kubectl get deployments -n bookstore
+kubectl get services -n bookstore
+kubectl get hpa -n bookstore
 echo ""
-echo "Access points:"
-echo "- Bookstore UI: http://bookstore.local (via Ingress)"
-echo "- API Gateway: http://api.bookstore.local"
-echo ""
-echo "For Minikube: minikube service -n bookstore api-gateway"
-echo "For Kind: kubectl port-forward -n bookstore svc/api-gateway 3000:3000"
+echo "Access:"
+echo "  Frontend:   kubectl port-forward svc/frontend 3000:3000 -n bookstore"
+echo "  API GW:     kubectl port-forward svc/api-gateway 8090:3000 -n bookstore"
+echo "  Prometheus: kubectl port-forward svc/prometheus 9091:9090 -n bookstore"
+echo "  Grafana:    kubectl port-forward svc/grafana 3030:3000 -n bookstore"

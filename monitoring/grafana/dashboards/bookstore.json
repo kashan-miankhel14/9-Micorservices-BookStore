@@ -1,0 +1,107 @@
+{
+  "id": null,
+  "uid": "bookstore-overview",
+  "title": "Bookstore Overview",
+  "tags": ["bookstore"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum by (instance) (rate(http_request_duration_seconds_count[1m]))",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "p95 Latency (seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "5xx Error Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum by (instance) (rate(http_request_duration_seconds_count{status=~\"5..\"}[5m]))",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Service Health (up=1, down=0)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "up{job=\"bookstore\"}",
+          "legendFormat": "{{ instance }}"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Memory Usage (bytes)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "process_resident_memory_bytes{job=\"bookstore\"}",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Container Logs",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "datasource": "Loki",
+          "expr": "{job=\"docker\"}",
+          "legendFormat": ""
+        }
+      ]
+    }
+  ]
+}

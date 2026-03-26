@@ -18,15 +18,20 @@ spec:
         image: bookstore-review-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4005
+        - containerPort: 3005
         env:
         - name: PORT
-          value: "4005"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3005"
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: bookstore-config
+              key: MONGO_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bookstore-secret
+              key: JWT_SECRET
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +42,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4005
+            port: 3005
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4005
+            port: 3005
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +62,5 @@ spec:
   selector:
     app: review-service
   ports:
-  - port: 4005
-    targetPort: 4005
-    protocol: TCP
+  - port: 3005
+    targetPort: 3005

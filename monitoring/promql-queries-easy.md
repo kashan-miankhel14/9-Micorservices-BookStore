@@ -1,6 +1,6 @@
-# 🔍 PromQL Queries in Very Simple Words
+# PromQL Queries in Plain Words
 
-Use these commands in Prometheus **Graph** tab. Each entry shows the query followed by a one-line explanation.
+Use these commands in Prometheus Graph tab. Each entry shows the query followed by a one-line explanation.
 
 `up`
 : Prometheus can see the service (1 = OK, 0 = problem). Use first to prove everything is alive.
@@ -15,7 +15,7 @@ Use these commands in Prometheus **Graph** tab. Each entry shows the query follo
 : Requests per second hitting the Next.js frontend when you refresh the UI.
 
 `histogram_quantile(0.95, sum by (le, instance) (rate(http_request_duration_seconds_bucket[5m])))`
-: 95% of backend requests finish faster than this number—talk about latency and SLOs.
+: 95% of backend requests finish faster than this number - talk about latency and SLOs.
 
 `rate(process_cpu_seconds_total[1m]) * 100`
 : Approximate CPU usage percent per container. Great for resource discussion.
@@ -37,36 +37,29 @@ Use these commands in Prometheus **Graph** tab. Each entry shows the query follo
 ## Step-by-step: Running a Query in Prometheus
 
 1. Go to http://localhost:9091
-2. Click **Graph** at the top.
-3. In the **Expression** box, paste one of the queries above.
-4. Press **Execute**.
-5. Look at the **Table** view for numbers.
-6. Click **Graph** to see the trend line. Resize time range with the drop-down (5m / 1h / 1d).
+2. Click Graph at the top.
+3. In the Expression box, paste one of the queries above.
+4. Press Execute.
+5. Look at the Table view for numbers.
+6. Click Graph to see the trend line. Resize time range with the drop-down (5m / 1h / 1d).
 
 ---
 
 ## Suggested Presentation Flow
 
-1. **Health Check** → Queries #1 and #2.
-2. **Traffic** → Queries #3 and #4 after you click around the app.
-3. **Latency** → Query #5 (explain 95th percentile).
-4. **Resources** → Queries #6 and #7.
-5. **Errors** → Query #8 (even if zero, explain the idea).
-6. **Advanced Signals** → Query #9 (if you instrument it) and #10 for downtime history.
+1. Health Check -> Queries #1 and #2.
+2. Traffic -> Queries #3 and #4 after you click around the app.
+3. Latency -> Query #5 (explain 95th percentile).
+4. Resources -> Queries #6 and #7.
+5. Errors -> Query #8 (even if zero, explain the idea).
+6. Advanced Signals -> Query #9 (if you instrument it) and #10 for downtime history.
 
 ---
 
-## How to Start Everything (Recap)
-
-See `monitoring/setup-guide.md` for screenshots and commands. Short version:
+## How to Start Everything
 
 ```bash
-cd /path/to/Prometheus-Presentation
-docker compose up --build -d
+make up
 ```
 
-Then open `http://localhost:3000` (app) and `http://localhost:9091` (Prometheus).
-
----
-
-Need more help? Ask me to expand any section with pictures or step-by-step screenshots.
+Then open http://localhost:3000 (app) and http://localhost:9091 (Prometheus).

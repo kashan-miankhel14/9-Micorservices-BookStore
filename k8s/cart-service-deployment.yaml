@@ -18,15 +18,20 @@ spec:
         image: bookstore-cart-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4006
+        - containerPort: 3006
         env:
         - name: PORT
-          value: "4006"
+          value: "3006"
         - name: MONGO_URL
           valueFrom:
             configMapKeyRef:
               name: bookstore-config
               key: MONGO_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bookstore-secret
+              key: JWT_SECRET
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +42,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4006
+            port: 3006
           initialDelaySeconds: 15
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4006
+            port: 3006
           initialDelaySeconds: 10
           periodSeconds: 5
 ---
@@ -57,6 +62,5 @@ spec:
   selector:
     app: cart-service
   ports:
-  - port: 4006
-    targetPort: 4006
-    protocol: TCP
+  - port: 3006
+    targetPort: 3006

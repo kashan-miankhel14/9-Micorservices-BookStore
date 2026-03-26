@@ -18,15 +18,26 @@ spec:
         image: bookstore-order-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4003
+        - containerPort: 3003
         env:
         - name: PORT
-          value: "4003"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3003"
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: bookstore-config
+              key: MONGO_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bookstore-secret
+              key: JWT_SECRET
+        - name: PAYMENT_URL
+          value: "http://payment-service:3004"
+        - name: NOTIFY_URL
+          value: "http://notification-service:3008"
+        - name: CART_URL
+          value: "http://cart-service:3006"
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +48,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4003
+            port: 3003
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4003
+            port: 3003
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +68,5 @@ spec:
   selector:
     app: order-service
   ports:
-  - port: 4003
-    targetPort: 4003
-    protocol: TCP
+  - port: 3003
+    targetPort: 3003

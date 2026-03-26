@@ -18,15 +18,19 @@ spec:
         image: bookstore-recommendation-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4007
+        - containerPort: 3007
         env:
         - name: PORT
-          value: "4007"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3007"
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: bookstore-config
+              key: MONGO_URL
+        - name: BOOKS_URL
+          value: "http://book-catalog-service:3002"
+        - name: REVIEWS_URL
+          value: "http://review-service:3005"
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +41,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4007
+            port: 3007
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4007
+            port: 3007
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +61,5 @@ spec:
   selector:
     app: recommendation-service
   ports:
-  - port: 4007
-    targetPort: 4007
-    protocol: TCP
+  - port: 3007
+    targetPort: 3007

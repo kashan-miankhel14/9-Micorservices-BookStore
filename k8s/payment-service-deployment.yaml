@@ -18,15 +18,10 @@ spec:
         image: bookstore-payment-service:latest
         imagePullPolicy: Never
         ports:
-        - containerPort: 4004
+        - containerPort: 3004
         env:
         - name: PORT
-          value: "4004"
-        envFrom:
-        - configMapRef:
-            name: bookstore-config
-        - secretRef:
-            name: bookstore-secret
+          value: "3004"
         resources:
           requests:
             memory: "128Mi"
@@ -37,13 +32,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4004
+            port: 3004
           initialDelaySeconds: 20
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 4004
+            port: 3004
           initialDelaySeconds: 15
           periodSeconds: 5
 ---
@@ -57,6 +52,5 @@ spec:
   selector:
     app: payment-service
   ports:
-  - port: 4004
-    targetPort: 4004
-    protocol: TCP
+  - port: 3004
+    targetPort: 3004

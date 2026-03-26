@@ -1,0 +1,42 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/bookstore
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Update image tags in K8s manifests
+        run: |
+          SERVICES=(api-gateway user-service book-catalog-service order-service payment-service review-service cart-service recommendation-service notification-service frontend)
+          for svc in "${SERVICES[@]}"; do
+            find k8s/ -name "*.yaml" -exec sed -i \
+              "s|image: bookstore-${svc}:.*|image: ${{ env.IMAGE_PREFIX }}-${svc}:${{ github.sha }}|g" {} \;
+          done
+
+      - name: Update imagePullPolicy to Always
+        run: |
+          find k8s/ -name "*.yaml" -exec sed -i \
+            "s|imagePullPolicy: Never|imagePullPolicy: Always|g" {} \;
+
+      - name: Deploy to Kubernetes
+        run: bash k8s/deploy.sh
